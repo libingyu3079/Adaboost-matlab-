@@ -1,0 +1,106 @@
+%找到每一轮循环中的弱分类器
+%输出的结果包括每次一刀切的位置v和所对应的误差error
+X=[0,1,2,3,4,5,6,7,8,9];
+y=[1,1,1,-1,-1,-1,1,1,1,-1];
+learning_rate = 0.5;
+[m,n]=size(X);%其中m代表特征的个数，n对应样本的个数
+error = 100000000;
+best_v = 0.0; %弱分类器中一刀切的位置
+features_min = min(X);
+features_max = max(X);
+n_step = floor((features_max-features_min+learning_rate) / learning_rate);
+% define a direct
+% direct_positive denotes the left is -1
+% direct_negative denotes the right is -1
+direct = [];
+compare_array = [];
+compare_array_positive=zeros(1,10);
+compare_array_negative=zeros(1,10);
+weight = ones(1,10)*(1/10);
+while error>0.2
+    for i=1:n_step
+            v = features_min+learning_rate*i;
+            if v ~= X(:)
+                for k=1:n
+                    if X(k)>v
+                        compare_array_positive(k)=1;
+                        compare_array_negative(k)=-1;
+                    else
+                        compare_array_positive(k) = -1;
+                        compare_array_negative(k) = 1;
+                    end
+                end
+                weight1=0;%权重初值
+                K1=[];%用于存放实际标签与算出来的标签的区别的索引
+                    for k=1:10
+                        if compare_array_positive(k) ~= y(k)
+                            K1=[K1,k];
+                            weight1=weight(K1(:));
+                            weight_erro_positive = sum(weight1);
+                        end
+                    end
+                     weight2=[];%权重初值
+                     K2=[];%用于存放实际标签与算出来的标签的区别的索引
+                     for k=1:10
+                        if compare_array_negative(k) ~= y(k)
+                           K2=[K2,k];
+                           weight2=weight(K2(:));
+                           weight_erro_negative = sum(weight2);
+                        end
+                     end
+            end
+
+        %     disp('正向')
+        %     disp(weight_erro_positive)
+        %     disp('负向')
+        %     disp(weight_erro_negative)
+            if v~=X(:)
+                    weight_erro=[];
+                     if weight_erro_positive<weight_erro_negative
+                         weight_erro = [weight_erro,weight_erro_positive];
+                         compare_array1 = compare_array_positive;
+                         direct = 'positive';
+                     else
+                         weight_erro = [weight_erro,weight_erro_negative];
+                          compare_array1 = compare_array_negative;
+                          direct = 'negative';
+                     end
+                     if weight_erro<error
+                        error = weight_erro;
+                        best_v=v;
+                        compare_array = compare_array1;
+                     end
+                     disp('best_v')
+                     disp(best_v)
+%                      disp(compare_array)
+%                      disp(y)
+                     disp('error')
+                     disp(error)
+            end
+    end
+        % 接下来计算alpha
+        alpha = 0.5*log((1-error)/error);
+        disp('alpha')
+        disp(alpha)
+        %规范化因子
+        for i=1:n
+            Q(i)=weight(i)*exp(-1*alpha*y(i)*compare_array(i));
+        end
+        Z=sum(Q);
+    %     disp(Z)
+    %     disp(weight)
+        %权值更新
+        for i=1:n
+            weight(i)=(weight(i)*exp(-1*alpha*y(i)*compare_array(i)))/Z;
+        end
+        disp('weight')
+        disp(weight)
+end
+
+    
+ 
+
+
+
+
+
